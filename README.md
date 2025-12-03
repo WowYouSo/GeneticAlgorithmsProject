@@ -9,6 +9,8 @@ The core problem is to recreate a given 32×32 target image using a limited numb
 ## Dataset
 The dataset consists of a multiple 32×32 RGB target images. 
 
+We're planning to use some subset of [this dataset](https://www.cs.toronto.edu/~kriz/cifar.html).
+
 ## Chromosome Encoding
 Each chromosome represents a full candidate image as a fixed-length list of 50 genes. Each gene defines a single shape, and the sequence determines draw order. This encoding allows genetic operations such as crossover and mutation to operate on entire image descriptions.
 
