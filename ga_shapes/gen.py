@@ -23,10 +23,16 @@ class AbstractGene(ABC):
 
 class EllipseGene(AbstractGene):
     def __init__(self):
-        self.cx = random.randint(0, WIDTH - 1)
-        self.cy = random.randint(0, HEIGHT - 1)
-        self.rx = random.randint(1, WIDTH)
-        self.ry = random.randint(1, HEIGHT)
+        # two focal points
+        self.f1x = random.randint(0, WIDTH - 1)
+        self.f1y = random.randint(0, HEIGHT - 1)
+        self.f2x = random.randint(0, WIDTH - 1)
+        self.f2y = random.randint(0, HEIGHT - 1)
+
+        # sum of distances to focuses
+        focal_distance = np.sqrt((self.f2x - self.f1x) ** 2 + (self.f2y - self.f1y) ** 2)
+        self.sum_distances = random.uniform(focal_distance + 1, max(WIDTH, HEIGHT) * 2)
+
         self.color = np.array(
             [random.randint(0, 255) for _ in range(3)],
             dtype=np.float32,
@@ -34,22 +40,27 @@ class EllipseGene(AbstractGene):
         self.alpha = random.uniform(0.0, 1.0)
 
     def mutate(self):
-        # Локовые сдвиги координат и размеров
-        self.cx = int(np.clip(
-            self.cx + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
+        self.f1x = int(np.clip(
+            self.f1x + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
             0, WIDTH - 1
         ))
-        self.cy = int(np.clip(
-            self.cy + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
+        self.f1y = int(np.clip(
+            self.f1y + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
             0, HEIGHT - 1
         ))
-        self.rx = int(np.clip(
-            self.rx + np.random.normal(0, GENE_MUTATION_SIGMA_SIZE),
-            1, WIDTH
+        self.f2x = int(np.clip(
+            self.f2x + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
+            0, WIDTH - 1
         ))
-        self.ry = int(np.clip(
-            self.ry + np.random.normal(0, GENE_MUTATION_SIGMA_SIZE),
-            1, HEIGHT
+        self.f2y = int(np.clip(
+            self.f2y + np.random.normal(0, GENE_MUTATION_SIGMA_POS),
+            0, HEIGHT - 1
+        ))
+        focal_distance = np.sqrt((self.f2x - self.f1x) ** 2 + (self.f2y - self.f1y) ** 2)
+        self.sum_distances = float(np.clip(
+            self.sum_distances + np.random.normal(0, GENE_MUTATION_SIGMA_SIZE),
+            focal_distance + 1,  # should be at least focal distance
+            max(WIDTH, HEIGHT) * 2
         ))
 
         # Цвет
@@ -65,19 +76,43 @@ class EllipseGene(AbstractGene):
         ))
 
     def apply(self, canvas: np.ndarray) -> None:
-        mask = Image.new("L", IMAGE_SIZE, 0)
-        draw = ImageDraw.Draw(mask)
-        bbox = [self.cx - self.rx,
-                self.cy - self.ry,
-                self.cx + self.rx,
-                self.cy + self.ry]
-        draw.ellipse(bbox, fill=255)
-        mask_np = np.array(mask, dtype=np.float32) / 255.0
+        height, width, _ = canvas.shape
 
+        # Bounding Box
+        max_radius = int(self.sum_distances / 2) + 1
+
+        center_x = (self.f1x + self.f2x) // 2
+        center_y = (self.f1y + self.f2y) // 2
+
+        y_min = max(0, center_y - max_radius)
+        y_max = min(height, center_y + max_radius)
+        x_min = max(0, center_x - max_radius)
+        x_max = min(width, center_x + max_radius)
+
+        if x_min >= x_max or y_min >= y_max:
+            return
+
+        # Coordinate grid
+        y_grid, x_grid = np.ogrid[y_min:y_max, x_min:x_max]
+
+        # distances to focus points
+        d1 = np.sqrt((x_grid - self.f1x) ** 2 + (y_grid - self.f1y) ** 2)
+        d2 = np.sqrt((x_grid - self.f2x) ** 2 + (y_grid - self.f2y) ** 2)
+
+        # mask in/out of ellipsis
+        mask_bool = (d1 + d2) <= self.sum_distances
+
+        if not np.any(mask_bool):
+            return
+
+        mask = mask_bool.astype(np.float32)
+
+        # color mixing
+        canvas_roi = canvas[y_min:y_max, x_min:x_max]
         for c in range(3):
-            canvas[:, :, c] = (
-                (1.0 - self.alpha * mask_np) * canvas[:, :, c]
-                + self.alpha * mask_np * self.color[c]
+            canvas_roi[:, :, c] = (
+                    (1.0 - self.alpha * mask) * canvas_roi[:, :, c]
+                    + self.alpha * mask * self.color[c]
             )
 
 

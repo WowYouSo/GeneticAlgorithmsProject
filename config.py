@@ -14,7 +14,7 @@ SAVE_EVERY_N_GENERATIONS = 50
 OUTPUT_DIR = "outputs"
 
 # Reproducibility (optional)
-RANDOM_SEED = 42
+RANDOM_SEED = 239
 
 GENE_LOCAL_MUTATION_PROB = 0.8  # например 80% локальный сдвиг, 20% полный ресет
 
