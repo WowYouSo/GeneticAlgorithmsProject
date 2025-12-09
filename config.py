@@ -1,3 +1,4 @@
+
 IMAGE_SIZE = (128, 128)
 NUM_GENES = 50
 TARGET_IMAGE_NAME = "Hilma_af_Klint_Svanen_128x128.png"
@@ -14,7 +15,9 @@ SAVE_EVERY_N_GENERATIONS = 50
 OUTPUT_DIR = "outputs"
 
 # Reproducibility (optional)
-RANDOM_SEED = 239
+RANDOM_SEED = 42
+
+SELECTION_STRATEGY = "softmax"
 
 GENE_LOCAL_MUTATION_PROB = 0.8  # например 80% локальный сдвиг, 20% полный ресет
 
