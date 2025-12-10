@@ -1,5 +1,3 @@
-# Genetic Algorithm for Image Approximation
-
 # Genetic Algorithm Image Reconstruction using Geometric Primitives
 
 ## Overview
