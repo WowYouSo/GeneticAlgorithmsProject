@@ -13,6 +13,7 @@ from config import (
     RANDOM_SEED,
     ELITISM
 )
+from config import RANDOM_IMMIGRANT_RATE
 from ga_shapes.chromosome import Chromosome
 from ga_shapes.fitness import evaluate
 from ga_shapes.selection import select_parents
@@ -44,7 +45,8 @@ def evolve():
     """Main GA loop."""
     setup_environment()
     population = create_initial_population()
-
+    lst_best_fitness = 1.0
+    cnt_iters_without_progress = 0
     for gen in range(NUM_GENERATIONS):
         # 1. Evaluate fitness for current population
         fitnesses = [evaluate(ind) for ind in population]
@@ -53,8 +55,15 @@ def evolve():
         best_idx = int(np.argmax(fitnesses))
         best_fitness = fitnesses[best_idx]
         avg_fitness = float(np.mean(fitnesses))
-        print(f"Generation {gen:4d} | best: {best_fitness:.4f} | avg: {avg_fitness:.4f}")
-
+        print(f"Generation {gen:4d} | best: {best_fitness:.4f} | avg: {avg_fitness:.4f} | progress: {best_fitness - lst_best_fitness:.4f}")
+        if (best_fitness - lst_best_fitness) > 0.1:
+            cnt_iters_without_progress = 0
+        else:
+            cnt_iters_without_progress += 1
+        if cnt_iters_without_progress >= SAVE_EVERY_N_GENERATIONS:
+            print("LONG STRING WITHOUT PROGRESS")
+            break
+        lst_best_fitness = best_fitness
         best_individual = population[best_idx]
 
         # 3. Optionally save best image
@@ -81,6 +90,12 @@ def evolve():
             next_population.append(child1)
             if len(next_population) < POPULATION_SIZE:
                 next_population.append(child2)
+
+        num_immigrants = int(POPULATION_SIZE * RANDOM_IMMIGRANT_RATE)
+        for i in range(num_immigrants):
+            # перезаписываем с конца (худших, не элиту)
+            idx = POPULATION_SIZE - 1 - i
+            next_population[idx] = Chromosome()
 
         population = next_population
 

@@ -32,6 +32,19 @@ class EllipseGene(AbstractGene):
             dtype=np.float32,
         )
         self.alpha = random.uniform(0.0, 1.0)
+        self._rebuild_mask()
+
+    def _rebuild_mask(self):
+        mask = Image.new("L", IMAGE_SIZE, 0)
+        draw = ImageDraw.Draw(mask)
+        bbox = [
+            self.cx - self.rx,
+            self.cy - self.ry,
+            self.cx + self.rx,
+            self.cy + self.ry,
+        ]
+        draw.ellipse(bbox, fill=255)
+        self.mask_np = np.array(mask, dtype=np.float32) / 255.0
 
     def mutate(self):
         # Локовые сдвиги координат и размеров
@@ -63,21 +76,21 @@ class EllipseGene(AbstractGene):
             self.alpha + np.random.normal(0, GENE_MUTATION_SIGMA_ALPHA),
             0.00, 0.99
         ))
+        self._rebuild_mask()
 
     def apply(self, canvas: np.ndarray) -> None:
-        mask = Image.new("L", IMAGE_SIZE, 0)
-        draw = ImageDraw.Draw(mask)
-        bbox = [self.cx - self.rx,
-                self.cy - self.ry,
-                self.cx + self.rx,
-                self.cy + self.ry]
-        draw.ellipse(bbox, fill=255)
-        mask_np = np.array(mask, dtype=np.float32) / 255.0
-
+        # mask = Image.new("L", IMAGE_SIZE, 0)
+        # draw = ImageDraw.Draw(mask)
+        # bbox = [self.cx - self.rx,
+        #         self.cy - self.ry,
+        #         self.cx + self.rx,
+        #         self.cy + self.ry]
+        # draw.ellipse(bbox, fill=255)
+        # mask_np = np.array(mask, dtype=np.float32) / 255.0
         for c in range(3):
             canvas[:, :, c] = (
-                (1.0 - self.alpha * mask_np) * canvas[:, :, c]
-                + self.alpha * mask_np * self.color[c]
+                (1.0 - self.alpha * self.mask_np) * canvas[:, :, c]
+                + self.alpha * self.mask_np * self.color[c]
             )
 
 
@@ -92,6 +105,13 @@ class TriangleGene(AbstractGene):
             dtype=np.float32,
         )
         self.alpha = random.uniform(0.0, 1.0)
+        self._rebuild_mask()
+
+    def _rebuild_mask(self):
+        mask = Image.new("L", IMAGE_SIZE, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.polygon(self.points, fill=255)
+        self.mask_np = np.array(mask, dtype=np.float32) / 255.0
 
     def mutate(self):
         new_points = []
@@ -116,17 +136,18 @@ class TriangleGene(AbstractGene):
             self.alpha + np.random.normal(0, GENE_MUTATION_SIGMA_ALPHA),
             0.00, 0.99
         ))
+        self._rebuild_mask()
 
     def apply(self, canvas: np.ndarray) -> None:
-        mask = Image.new("L", IMAGE_SIZE, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.polygon(self.points, fill=255)
-        mask_np = np.array(mask, dtype=np.float32) / 255.0
+        # mask = Image.new("L", IMAGE_SIZE, 0)
+        # draw = ImageDraw.Draw(mask)
+        # draw.polygon(self.points, fill=255)
+        # mask_np = np.array(mask, dtype=np.float32) / 255.0
 
         for c in range(3):
             canvas[:, :, c] = (
-                (1.0 - self.alpha * mask_np) * canvas[:, :, c]
-                + self.alpha * mask_np * self.color[c]
+                (1.0 - self.alpha * self.mask_np) * canvas[:, :, c]
+                + self.alpha * self.mask_np * self.color[c]
             )
 
 
@@ -142,6 +163,13 @@ class LineGene(AbstractGene):
             dtype=np.float32,
         )
         self.alpha = random.uniform(0.0, 1.0)
+        self._rebuild_mask()
+
+    def _rebuild_mask(self):
+        mask = Image.new("L", IMAGE_SIZE, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.line((self.x1, self.y1, self.x2, self.y2), fill=255, width=self.width)
+        self.mask_np = np.array(mask, dtype=np.float32) / 255.0
 
     def mutate(self):
         self.x1 = int(np.clip(
@@ -175,15 +203,16 @@ class LineGene(AbstractGene):
             self.alpha + np.random.normal(0, GENE_MUTATION_SIGMA_ALPHA),
             0.00, 0.99
         ))
+        self._rebuild_mask()
 
     def apply(self, canvas: np.ndarray) -> None:
-        mask = Image.new("L", IMAGE_SIZE, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.line((self.x1, self.y1, self.x2, self.y2), fill=255, width=self.width)
-        mask_np = np.array(mask, dtype=np.float32) / 255.0
+        # mask = Image.new("L", IMAGE_SIZE, 0)
+        # draw = ImageDraw.Draw(mask)
+        # draw.line((self.x1, self.y1, self.x2, self.y2), fill=255, width=self.width)
+        # mask_np = np.array(mask, dtype=np.float32) / 255.0
 
         for c in range(3):
             canvas[:, :, c] = (
-                (1.0 - self.alpha * mask_np) * canvas[:, :, c]
-                + self.alpha * mask_np * self.color[c]
+                (1.0 - self.alpha * self.mask_np) * canvas[:, :, c]
+                + self.alpha * self.mask_np * self.color[c]
             )

@@ -1,3 +1,4 @@
 *.gz
 cifar-10-batches-py
 download_cifar10.py
+outputs
